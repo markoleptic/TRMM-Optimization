@@ -1,3 +1,32 @@
 What is the work to be done, how the work will be divided and a
 tentative timeline that you and your team will follow? This is a contract between you and
 your teammates, so please complete this before anything else.
+
+We plan to divide up work as we go through the lab as well as finish the writeup as we complete tasks.
+
+11/7:
+Work on Loop Transformations
+
+11/9:
+Work on Loop Transformations
+
+11/14:
+Work on Parallelism in Isolation
+Work on GPUs 
+
+11/16:
+Work on Parallelism in Isolation
+Work on GPUs 
+
+11/21:
+Work on GPUs 
+Work on Combining Parallelism
+
+Before deadline:
+Work on Combining Parallelism
+finish writeup
+clean up branches
+merge branches
+
+
+
