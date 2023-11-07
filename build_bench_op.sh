@@ -76,8 +76,8 @@ ${CC} $CFLAGS -c \
 
 
 # build the timers
-${CC} -std=c99 ${TEST_RIG}.o ${OP_SUBMISSION_VAR01_FILE}.o -o ./run_bench_op_var01.x
-${CC} -std=c99 ${TEST_RIG}.o ${OP_SUBMISSION_VAR02_FILE}.o -o ./run_bench_op_var02.x
-${CC} -std=c99 ${TEST_RIG}.o ${OP_SUBMISSION_VAR03_FILE}.o -o ./run_bench_op_var03.x
+${CC} $CFLAGS -std=c99 ${TEST_RIG}.o ${OP_SUBMISSION_VAR01_FILE}.o -o ./run_bench_op_var01.x
+${CC} $CFLAGS -std=c99 ${TEST_RIG}.o ${OP_SUBMISSION_VAR02_FILE}.o -o ./run_bench_op_var02.x
+${CC} $CFLAGS -std=c99 ${TEST_RIG}.o ${OP_SUBMISSION_VAR03_FILE}.o -o ./run_bench_op_var03.x
 
 
