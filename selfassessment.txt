@@ -1,0 +1,9 @@
+In this file perform a postmortem. What was the work that was
+done? How was it divided? How would you distribute the points amongst your teammates
+(50/50, 60/40, 33/33/33?). How did your original statement of work line up with what was
+done? How did it evolve? How much time (and/or effort) did this take? How was the time
+(and/or effort) distributed across the task and team members? What would you do differently
+next time? This can be answered as a team or individually. With the point distribution, there
+is a small consensus bonus if the team agrees on the point distribution. If the team does agreee
+on a distribution then the average of the distributions will be used. Lastly, include the total
+number of person-hours spent on this lab.
