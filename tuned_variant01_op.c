@@ -183,6 +183,28 @@ void DISTRIBUTE_DATA_NAME( int m0, int n0,
   MPI_Status  status;
   int root_rid = 0;
 
+  // Layout for sequential data
+  // A is column major
+  int rs_AS = m0;
+  int cs_AS = 1;
+
+  // B is column major
+  int rs_BS = m0;
+  int cs_BS = 1;
+
+  // Note: Here is a perfect opportunity to change the layout
+  //       of your data which has the potential to give you
+  //       a sizeable performance gain.
+  // Layout for distributed data
+  // A is column major
+  int rs_AD = m0;
+  int cs_AD = 1;
+
+  // B is column major
+  int rs_BD = m0;
+  int cs_BD = 1;
+
+  
   MPI_Comm_rank(MPI_COMM_WORLD, &rid);
   MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
@@ -190,14 +212,18 @@ void DISTRIBUTE_DATA_NAME( int m0, int n0,
     {
       // Distribute the inputs
       for( int i0 = 0; i0 < m0; ++i0 )
+	for( int p0 = 0; p0 < m0; ++p0 )
 	{
-	  A_distributed[i0] = A_sequential[i0];
+	  A_distributed[i0 * cs_AD + p0 * rs_AD] =
+	    A_sequential[i0 * cs_AS + p0 * rs_AS];
 	}
   
       // Distribute the weights
-      for( int p0 = 0; p0 < n0; ++p0 )
+      for( int p0 = 0; p0 < m0; ++p0 )
+	for( int j0 = 0; j0 < n0; ++j0 )
 	{
-	B_distributed[p0] = B_sequential[p0];
+	  B_distributed[p0 * cs_BD + j0 * rs_BD] =
+	    B_sequential[p0 * cs_BS + j0 * rs_BS];
 	}
     }
   else
@@ -230,6 +256,21 @@ void COLLECT_DATA_NAME( int m0, int n0,
   MPI_Status  status;
   int root_rid = 0;
 
+  // Layout for sequential data
+  // A is column major
+  // C is column major
+  int rs_CS = m0;
+  int cs_CS = 1;
+
+  // Note: Here is a perfect opportunity to change the layout
+  //       of your data which has the potential to give you
+  //       a sizeable performance gain.
+  // Layout for distributed data
+  // C is column major
+  int rs_CD = m0;
+  int cs_CD = 1;
+
+  
   MPI_Comm_rank(MPI_COMM_WORLD, &rid);
   MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
@@ -238,7 +279,9 @@ void COLLECT_DATA_NAME( int m0, int n0,
 
       // Collect the output
       for( int i0 = 0; i0 < m0; ++i0 )
-	C_sequential[i0] = C_distributed[i0];
+	for( int j0 = 0; j0 < n0; ++j0 )
+	C_sequential[i0 * cs_CS + j0 * rs_CS] =
+	  C_distributed[i0 * cs_CD + j0 * rs_CD];
     }
   else
     {
