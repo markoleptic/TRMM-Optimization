@@ -98,18 +98,16 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	{
 		for (int j0 = 0; j0 < n0; ++j0)
 		{
-			for (int i0 = 0; i0 < m0; ++i0)
+			for (int i0 = 0; i0 < j0; ++i0)
 			{
 				float res = 0.0f;
 				for (int p0 = 0; p0 < m0; ++p0)
 				{
-					if (j0 > i0)
-					{
-						float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
-						float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
 
-						res += A_ip * B_pj;
-					}
+					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
+					float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
+
+					res += A_ip * B_pj;
 				}
 
 				C_distributed[i0 * cs_C + j0 * rs_C] = res;
