@@ -75,7 +75,6 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	int root_rid = 0;
 
 	/*
-
 	  Using the convention that row_stride (rs) is the step size you take going down a row,
 	  column stride (cs) is the step size going down the column.
 	*/
@@ -103,13 +102,10 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 				float res = 0.0f;
 				for (int p0 = 0; p0 < m0; ++p0)
 				{
-
 					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
 					float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
-
 					res += A_ip * B_pj;
 				}
-
 				C_distributed[i0 * cs_C + j0 * rs_C] = res;
 			}
 		}
