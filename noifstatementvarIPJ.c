@@ -96,21 +96,25 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 
 	if (rid == root_rid)
 	{
-		for (int j0 = 0; j0 < n0; ++j0)
+		/* Initialize with 0 because the initial value will be random garbage,
+		   necessary because using += operator in the i0 loop */
+		for (int i0 = 0; i0 < n0; ++i0)
 		{
-			for (int i0 = 0; i0 < j0; ++i0)
+			for (int p0 = 0; p0 < m0; ++p0)
 			{
-				float res = 0.0f;
-				for (int p0 = 0; p0 < m0; ++p0)
+				C_distributed[i0 * rs_C + p0] = 0.0f;
+			}
+		}
+		for (int i0 = 0; i0 < m0; ++i0)
+		{
+			for (int p0 = 0; p0 < m0; ++p0)
+			{
+				float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
+				for (int j0 = i0 + 1; j0 < n0; ++j0)
 				{
-
-					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
 					float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
-
-					res += A_ip * B_pj;
+					C_distributed[i0 * cs_C + j0 * rs_C] += A_ip * B_pj;
 				}
-
-				C_distributed[i0 * cs_C + j0 * rs_C] = res;
 			}
 		}
 	}
@@ -122,10 +126,7 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 }
 
 // Create the buffers on each node
-void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0,
-							   float **A_distributed,
-							   float **B_distributed,
-							   float **C_distributed)
+void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_distributed, float **C_distributed)
 {
 	int rid;
 	int num_ranks;
@@ -155,11 +156,8 @@ void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0,
 	}
 }
 
-void DISTRIBUTE_DATA_NAME(int m0, int n0,
-						  float *A_sequential,
-						  float *B_sequential,
-						  float *A_distributed,
-						  float *B_distributed)
+void DISTRIBUTE_DATA_NAME(int m0, int n0, float *A_sequential, float *B_sequential, float *A_distributed,
+			  float *B_distributed)
 {
 
 	int rid;
@@ -198,16 +196,14 @@ void DISTRIBUTE_DATA_NAME(int m0, int n0,
 		for (int i0 = 0; i0 < m0; ++i0)
 			for (int p0 = 0; p0 < m0; ++p0)
 			{
-				A_distributed[i0 * cs_AD + p0 * rs_AD] =
-					A_sequential[i0 * cs_AS + p0 * rs_AS];
+				A_distributed[i0 * cs_AD + p0 * rs_AD] = A_sequential[i0 * cs_AS + p0 * rs_AS];
 			}
 
 		// Distribute the weights
 		for (int p0 = 0; p0 < m0; ++p0)
 			for (int j0 = 0; j0 < n0; ++j0)
 			{
-				B_distributed[p0 * cs_BD + j0 * rs_BD] =
-					B_sequential[p0 * cs_BS + j0 * rs_BS];
+				B_distributed[p0 * cs_BD + j0 * rs_BD] = B_sequential[p0 * cs_BS + j0 * rs_BS];
 			}
 	}
 	else
@@ -226,9 +222,7 @@ void DISTRIBUTE_DATA_NAME(int m0, int n0,
 	}
 }
 
-void COLLECT_DATA_NAME(int m0, int n0,
-					   float *C_distributed,
-					   float *C_sequential)
+void COLLECT_DATA_NAME(int m0, int n0, float *C_distributed, float *C_sequential)
 {
 	int rid;
 	int num_ranks;
@@ -259,8 +253,7 @@ void COLLECT_DATA_NAME(int m0, int n0,
 		// Collect the output
 		for (int i0 = 0; i0 < m0; ++i0)
 			for (int j0 = 0; j0 < n0; ++j0)
-				C_sequential[i0 * cs_CS + j0 * rs_CS] =
-					C_distributed[i0 * cs_CD + j0 * rs_CD];
+				C_sequential[i0 * cs_CS + j0 * rs_CS] = C_distributed[i0 * cs_CD + j0 * rs_CD];
 	}
 	else
 	{
@@ -280,10 +273,7 @@ void COLLECT_DATA_NAME(int m0, int n0,
 	}
 }
 
-void DISTRIBUTED_FREE_NAME(int m0, int n0,
-						   float *A_distributed,
-						   float *B_distributed,
-						   float *C_distributed)
+void DISTRIBUTED_FREE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, float *C_distributed)
 {
 	int rid;
 	int num_ranks;

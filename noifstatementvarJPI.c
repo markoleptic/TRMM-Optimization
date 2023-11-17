@@ -95,17 +95,23 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 
 	if (rid == root_rid)
 	{
+		/* Initialize with 0 because the initial value will be random garbage,
+		   necessary because using += operator in the i0 loop */
+		for (int i0 = 0; i0 < n0; ++i0)
+		{
+			for (int p0 = 0; p0 < m0; ++p0)
+			{
+				C_distributed[i0 * rs_C + p0] = 0.0f;
+			}
+		}
 		for (int j0 = 0; j0 < n0; ++j0)
 		{
 			for (int p0 = 0; p0 < m0; ++p0)
 			{
-				// initialize with 0 because initial value will be random garbage,
-				// necessary because using += operator in the i0 loop
-				C_distributed[j0 * cs_C + p0 * rs_C] = 0.0f;
+				float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
 				for (int i0 = 0; i0 < j0; ++i0)
 				{
 					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
-					float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
 					C_distributed[i0 * cs_C + j0 * rs_C] += A_ip * B_pj;
 				}
 			}
@@ -117,7 +123,6 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 		 than 1 rank to do work in distributed memory context. */
 	}
 }
-
 
 // Create the buffers on each node
 void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_distributed, float **C_distributed)
