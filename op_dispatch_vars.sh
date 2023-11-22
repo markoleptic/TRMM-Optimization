@@ -9,9 +9,9 @@ OP_BASELINE_FILE="baseline_op.c"    #
 # HOWEVER, CHANGE THESE LINES:             #
 # Replace the filenames with your variants #
 ############################################
-OP_SUBMISSION_VAR01_FILE="noifstatementvarPIJ.c"
-OP_SUBMISSION_VAR02_FILE="noifstatementvarPJI.c"
-OP_SUBMISSION_VAR03_FILE="noifstatementvarIPJ.c"
+OP_SUBMISSION_VAR01_FILE="blocked_JIP_IJ.c"
+OP_SUBMISSION_VAR02_FILE="blocked_JIP_IP.c"
+OP_SUBMISSION_VAR03_FILE="blocked_JIP_PJ.c"
 
 ######################################################
 # You can even change the compiler flags if you want #
