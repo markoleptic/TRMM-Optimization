@@ -95,31 +95,30 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 128;
-
+	const int block_size = 512;
 	if (rid == root_rid)
 	{
-		for (int j0 = 0; j0 <= n0; j0 += block_size)
+		for (int j0 = 0; j0 < n0; j0 += block_size)
 		{
 			for (int i0 = 0; i0 <= j0; i0 += block_size)
 			{
-                const int jj_max = MIN(j0 + block_size, n0);
-				for (int jj = j0; jj < jj_max; ++jj)
+				// start of block
+				for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
 				{
-                    const int ii_max = MIN(i0 + block_size, jj);
-					for (int ii = i0; ii < ii_max; ++ii)
+					for (int ii = i0; ii < jj; ++ii)
 					{
                         float res = 0.0f;
-						for (int p0 = 0; p0 <= m0; ++p0)
+						// non-blocked loop
+						for (int p0 = 0; p0 < m0; ++p0)
 						{
 							float A_ip = A_distributed[ii * cs_A + p0 * rs_A];
 							float B_pj = B_distributed[p0 * cs_B + jj * rs_B];
 							res += A_ip * B_pj;
 						}
-                        //printf("%d\n", ii *cs_C + jj * rs_C);
                         C_distributed[ii * cs_C + jj * rs_C] = res;
 					}
 				}
+				// end of block
 			}
 		}
 	}

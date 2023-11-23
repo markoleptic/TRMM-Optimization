@@ -65,8 +65,6 @@
 #define DISTRIBUTED_FREE_NAME baseline_free
 #endif
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-
 void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, float *C_distributed)
 
 {
@@ -95,51 +93,30 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 512;
-
 	if (rid == root_rid)
 	{
-		// this works, but the ii loop should be inside the p0 loop
+		/* Initialize with 0 because the initial value will be random garbage,
+		   necessary because using += operator in the i0 loop */
+		for (int i0 = 0; i0 < n0; ++i0)
+		{
+			for (int p0 = 0; p0 < m0; ++p0)
+			{
+				C_distributed[i0 * rs_C + p0] = 0.0f;
+			}
+		}
+        // Not done yet
 		for (int j0 = 0; j0 < n0; ++j0)
 		{
-			for (int i0 = 0; i0 < j0; i0 += block_size)
+			for (int p0 = 0; p0 < m0; ++p0)
 			{
-				for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
+				float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
+				for (int i0 = 0; i0 < j0; ++i0)
 				{
-					float res = 0.0f;
-					for (int p0 = 0; p0 < m0; p0 += block_size)
-					{
-						for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
-						{
-							float A_ip = A_distributed[ii * cs_A + pp * rs_A];
-							float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
-							res += A_ip * B_pj;
-						}
-					}
-					C_distributed[ii * cs_C + j0 * rs_C] = res;
+					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
+					C_distributed[i0 * cs_C + j0 * rs_C] += A_ip * B_pj;
 				}
 			}
 		}
-		// for (int j0 = 0; j0 < n0; ++j0)
-		// {
-		// 	for (int i0 = 0; i0 < j0; i0 += block_size)
-		// 	{
-		// 		for (int p0 = 0; p0 < m0; p0 += block_size)
-		// 		{
-		// 			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
-		// 			{
-		// 				float res = 0.0f;
-		// 				for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
-		// 				{
-		// 					float A_ip = A_distributed[ii * cs_A + pp * rs_A];
-		// 					float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
-		// 					res += A_ip * B_pj;
-		// 				}
-		// 				C_distributed[ii * cs_C + j0 * rs_C] = res;
-		// 			}
-		// 		}
-		// 	}
-		// }
 	}
 	else
 	{
@@ -180,7 +157,7 @@ void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_
 }
 
 void DISTRIBUTE_DATA_NAME(int m0, int n0, float *A_sequential, float *B_sequential, float *A_distributed,
-						  float *B_distributed)
+			  float *B_distributed)
 {
 
 	int rid;

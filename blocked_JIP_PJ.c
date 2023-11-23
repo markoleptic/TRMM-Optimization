@@ -95,36 +95,27 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 128;
+	const int block_size = 512;
 
 	if (rid == root_rid)
 	{
-		for (int i0 = 0; i0 < n0; ++i0)
+		for (int j0 = 0; j0 < n0; j0 += block_size)
 		{
-			for (int p0 = 0; p0 < m0; ++p0)
+			for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
 			{
-				C_distributed[i0 * rs_C + p0] = 0.0f;
-			}
-		}
-		for (int j0 = 0; j0 <= n0; j0 += block_size)
-		{
-			const int jj_max = MIN(j0 + block_size, n0);
-			for (int jj = j0; jj < jj_max; ++jj)
-			{
-				for (int i0 = 0; i0 < j0; ++i0)
+				for (int i0 = 0; i0 < jj; ++i0)
 				{
-					for (int p0 = 0; p0 <= m0; p0 += block_size)
+					float res = 0.0f;
+					for (int p0 = 0; p0 < m0; p0 += block_size)
 					{
-						float res = 0.0f;
-						const int pp_max = MIN(p0 + block_size, m0);
-						for (int pp = 0; pp <= pp_max; ++pp)
+						for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
 						{
 							float A_ip = A_distributed[i0 * cs_A + pp * rs_A];
-							float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
+							float B_pj = B_distributed[pp * cs_B + jj * rs_B];
 							res += A_ip * B_pj;
 						}
-						C_distributed[i0 * cs_C + j0 * rs_C] = res;
 					}
+					C_distributed[i0 * cs_C + jj * rs_C] = res;
 				}
 			}
 		}
@@ -168,7 +159,7 @@ void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_
 }
 
 void DISTRIBUTE_DATA_NAME(int m0, int n0, float *A_sequential, float *B_sequential, float *A_distributed,
-			  float *B_distributed)
+						  float *B_distributed)
 {
 
 	int rid;
