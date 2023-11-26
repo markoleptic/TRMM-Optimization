@@ -95,51 +95,42 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 512;
+	const int block_size = 8;
 
 	if (rid == root_rid)
 	{
-		// this works, but the ii loop should be inside the p0 loop
+		for (int i0 = 0; i0 < n0; ++i0)
+		{
+			for (int p0 = 0; p0 < m0; ++p0)
+			{
+				C_distributed[i0 * rs_C + p0] = 0.0f;
+			}
+		}
 		for (int j0 = 0; j0 < n0; ++j0)
 		{
 			for (int i0 = 0; i0 < j0; i0 += block_size)
 			{
-				for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
+				for (int p0 = 0; p0 < m0; p0 += block_size)
 				{
-					float res = 0.0f;
-					for (int p0 = 0; p0 < m0; p0 += block_size)
+					for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
 					{
+						// if (m0 < 65 && j0 < 14)
+						// 	printf("j0: %d ii: %d pp: ", j0, ii);
 						for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
 						{
+							// if (m0 < 65 && j0 < 14)
+							// 	printf("%d ", pp);
 							float A_ip = A_distributed[ii * cs_A + pp * rs_A];
 							float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
-							res += A_ip * B_pj;
+							// Using temp doesn't work here since it introduces small floating point precision errors
+							C_distributed[ii * cs_C + j0 * rs_C] += A_ip * B_pj;
 						}
+						// if (m0 < 65 && j0 < 14)
+						// 	printf("\n");
 					}
-					C_distributed[ii * cs_C + j0 * rs_C] = res;
 				}
 			}
 		}
-		// for (int j0 = 0; j0 < n0; ++j0)
-		// {
-		// 	for (int i0 = 0; i0 < j0; i0 += block_size)
-		// 	{
-		// 		for (int p0 = 0; p0 < m0; p0 += block_size)
-		// 		{
-		// 			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
-		// 			{
-		// 				float res = 0.0f;
-		// 				for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
-		// 				{
-		// 					float A_ip = A_distributed[ii * cs_A + pp * rs_A];
-		// 					float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
-		// 					res += A_ip * B_pj;
-		// 				}
-		// 				C_distributed[ii * cs_C + j0 * rs_C] = res;
-		// 			}
-		// 		}
-		// 	}
-		// }
 	}
 	else
 	{
@@ -147,6 +138,161 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 		 than 1 rank to do work in distributed memory context. */
 	}
 }
+
+// Access Pattern when block_size = 8:
+/*
+j0: 1 ii: 0 pp: 0 1 2 3 4 5 6 7
+j0: 1 ii: 0 pp: 8 9 10 11 12 13 14 15
+j0: 1 ii: 0 pp: 16 17 18 19 20 21 22 23
+j0: 1 ii: 0 pp: 24 25 26 27 28 29 30 31
+j0: 1 ii: 0 pp: 32 33 34 35 36 37 38 39
+j0: 1 ii: 0 pp: 40 41 42 43 44 45 46 47
+j0: 1 ii: 0 pp: 48 49 50 51 52 53 54 55
+j0: 1 ii: 0 pp: 56 57 58 59 60 61 62 63
+j0: 2 ii: 0 pp: 0 1 2 3 4 5 6 7
+j0: 2 ii: 1 pp: 0 1 2 3 4 5 6 7
+j0: 2 ii: 0 pp: 8 9 10 11 12 13 14 15
+j0: 2 ii: 1 pp: 8 9 10 11 12 13 14 15
+j0: 2 ii: 0 pp: 16 17 18 19 20 21 22 23
+j0: 2 ii: 1 pp: 16 17 18 19 20 21 22 23
+j0: 2 ii: 0 pp: 24 25 26 27 28 29 30 31
+j0: 2 ii: 1 pp: 24 25 26 27 28 29 30 31
+j0: 2 ii: 0 pp: 32 33 34 35 36 37 38 39
+j0: 2 ii: 1 pp: 32 33 34 35 36 37 38 39
+j0: 2 ii: 0 pp: 40 41 42 43 44 45 46 47
+j0: 2 ii: 1 pp: 40 41 42 43 44 45 46 47
+j0: 2 ii: 0 pp: 48 49 50 51 52 53 54 55
+j0: 2 ii: 1 pp: 48 49 50 51 52 53 54 55
+j0: 2 ii: 0 pp: 56 57 58 59 60 61 62 63
+j0: 2 ii: 1 pp: 56 57 58 59 60 61 62 63
+j0: 3 ii: 0 pp: 0 1 2 3 4 5 6 7
+j0: 3 ii: 1 pp: 0 1 2 3 4 5 6 7
+j0: 3 ii: 2 pp: 0 1 2 3 4 5 6 7
+j0: 3 ii: 0 pp: 8 9 10 11 12 13 14 15
+j0: 3 ii: 1 pp: 8 9 10 11 12 13 14 15
+j0: 3 ii: 2 pp: 8 9 10 11 12 13 14 15
+j0: 3 ii: 0 pp: 16 17 18 19 20 21 22 23
+j0: 3 ii: 1 pp: 16 17 18 19 20 21 22 23
+j0: 3 ii: 2 pp: 16 17 18 19 20 21 22 23
+j0: 3 ii: 0 pp: 24 25 26 27 28 29 30 31
+j0: 3 ii: 1 pp: 24 25 26 27 28 29 30 31
+j0: 3 ii: 2 pp: 24 25 26 27 28 29 30 31
+j0: 3 ii: 0 pp: 32 33 34 35 36 37 38 39
+j0: 3 ii: 1 pp: 32 33 34 35 36 37 38 39
+j0: 3 ii: 2 pp: 32 33 34 35 36 37 38 39
+j0: 3 ii: 0 pp: 40 41 42 43 44 45 46 47
+j0: 3 ii: 1 pp: 40 41 42 43 44 45 46 47
+j0: 3 ii: 2 pp: 40 41 42 43 44 45 46 47
+j0: 3 ii: 0 pp: 48 49 50 51 52 53 54 55
+j0: 3 ii: 1 pp: 48 49 50 51 52 53 54 55
+j0: 3 ii: 2 pp: 48 49 50 51 52 53 54 55
+j0: 3 ii: 0 pp: 56 57 58 59 60 61 62 63
+j0: 3 ii: 1 pp: 56 57 58 59 60 61 62 63
+j0: 3 ii: 2 pp: 56 57 58 59 60 61 62 63
+j0: 4 ii: 0 pp: 0 1 2 3 4 5 6 7
+j0: 4 ii: 1 pp: 0 1 2 3 4 5 6 7
+j0: 4 ii: 2 pp: 0 1 2 3 4 5 6 7
+j0: 4 ii: 3 pp: 0 1 2 3 4 5 6 7
+j0: 4 ii: 0 pp: 8 9 10 11 12 13 14 15
+j0: 4 ii: 1 pp: 8 9 10 11 12 13 14 15
+j0: 4 ii: 2 pp: 8 9 10 11 12 13 14 15
+j0: 4 ii: 3 pp: 8 9 10 11 12 13 14 15
+j0: 4 ii: 0 pp: 16 17 18 19 20 21 22 23
+j0: 4 ii: 1 pp: 16 17 18 19 20 21 22 23
+j0: 4 ii: 2 pp: 16 17 18 19 20 21 22 23
+j0: 4 ii: 3 pp: 16 17 18 19 20 21 22 23
+j0: 4 ii: 0 pp: 24 25 26 27 28 29 30 31
+j0: 4 ii: 1 pp: 24 25 26 27 28 29 30 31
+j0: 4 ii: 2 pp: 24 25 26 27 28 29 30 31
+j0: 4 ii: 3 pp: 24 25 26 27 28 29 30 31
+j0: 4 ii: 0 pp: 32 33 34 35 36 37 38 39
+j0: 4 ii: 1 pp: 32 33 34 35 36 37 38 39
+j0: 4 ii: 2 pp: 32 33 34 35 36 37 38 39
+j0: 4 ii: 3 pp: 32 33 34 35 36 37 38 39
+j0: 4 ii: 0 pp: 40 41 42 43 44 45 46 47
+j0: 4 ii: 1 pp: 40 41 42 43 44 45 46 47
+j0: 4 ii: 2 pp: 40 41 42 43 44 45 46 47
+j0: 4 ii: 3 pp: 40 41 42 43 44 45 46 47
+j0: 4 ii: 0 pp: 48 49 50 51 52 53 54 55
+j0: 4 ii: 1 pp: 48 49 50 51 52 53 54 55
+j0: 4 ii: 2 pp: 48 49 50 51 52 53 54 55
+j0: 4 ii: 3 pp: 48 49 50 51 52 53 54 55
+j0: 4 ii: 0 pp: 56 57 58 59 60 61 62 63
+j0: 4 ii: 1 pp: 56 57 58 59 60 61 62 63
+j0: 4 ii: 2 pp: 56 57 58 59 60 61 62 63
+j0: 4 ii: 3 pp: 56 57 58 59 60 61 62 63
+*/
+
+// Old Code, can ignore:
+/*
+for (int j0 = 0; j0 < n0; ++j0)
+{
+	for (int i0 = 0; i0 < j0; i0 += block_size)
+	{
+		for (int pp = 0; pp < m0; pp += block_size)
+		{
+			if (m0 < 65 && j0 < 14)
+				printf("j0: %d io: %d pp: ", j0, ii);
+			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
+			{
+				if (m0 < 65 && j0 < 14)
+					printf("%d ", pp);
+				// Your computation here
+				float A_ip = A_distributed[ii * cs_A + pp * rs_A];
+				float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
+				C_distributed[ii * cs_C + j0 * rs_C] += A_ip * B_pj;
+			}
+			if (m0 < 65 && j0 < 14)
+				printf("\n");
+		}
+	}
+}
+for (int j0 = 0; j0 < n0; ++j0)
+{
+	for (int i0 = 0; i0 < j0; i0 += block_size)
+	{
+		for (int p0 = 0; p0 < m0; p0 += block_size)
+		{
+			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
+			{
+				if (m0 < 65 && j0 < 14)
+					printf("j0: %d ii: %d pp: ", j0, ii);
+				float res = 0.0f;
+				for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+				{
+					if (m0 < 65 && j0 < 14)
+						printf("%d ", pp);
+					float A_ip = A_distributed[ii * cs_A + pp * rs_A];
+					float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
+					res += A_ip * B_pj;
+				}
+				C_distributed[ii * cs_C + j0 * rs_C] = res;
+				if (m0 < 65 && j0 < 14)
+					printf("\n");
+			}
+		}
+	}
+}
+for (int j0 = 0; j0 < n0; ++j0)
+{
+	for (int i0 = 0; i0 < j0; i0 += block_size)
+	{
+		for (int p0 = 0; p0 < m0; p0 += block_size)
+		{
+			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
+			{
+				float res = 0.0f;
+				for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+				{
+					float A_ip = A_distributed[ii * cs_A + pp * rs_A];
+					float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
+					res += A_ip * B_pj;
+				}
+				C_distributed[ii * cs_C + j0 * rs_C] = res;
+			}
+		}
+	}
+} */
 
 // Create the buffers on each node
 void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_distributed, float **C_distributed)
@@ -180,7 +326,7 @@ void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_
 }
 
 void DISTRIBUTE_DATA_NAME(int m0, int n0, float *A_sequential, float *B_sequential, float *A_distributed,
-						  float *B_distributed)
+			  float *B_distributed)
 {
 
 	int rid;

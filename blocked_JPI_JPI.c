@@ -65,6 +65,8 @@
 #define DISTRIBUTED_FREE_NAME baseline_free
 #endif
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, float *C_distributed)
 
 {
@@ -93,6 +95,8 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
+	const int block_size = 64;
+
 	if (rid == root_rid)
 	{
 		/* Initialize with 0 because the initial value will be random garbage,
@@ -104,19 +108,96 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 				C_distributed[i0 * rs_C + p0] = 0.0f;
 			}
 		}
-        // Not done yet
-		for (int j0 = 0; j0 < n0; ++j0)
+
+		// All blocked (performs best)
+		for (int j0 = 0; j0 < n0; j0 += block_size)
 		{
-			for (int p0 = 0; p0 < m0; ++p0)
+			for (int p0 = 0; p0 < m0; p0 += block_size)
 			{
-				float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
-				for (int i0 = 0; i0 < j0; ++i0)
+				for (int i0 = 0; i0 <= j0; i0 += block_size)
 				{
-					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
-					C_distributed[i0 * cs_C + j0 * rs_C] += A_ip * B_pj;
+					for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
+					{
+						for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+						{
+							float B_pj = B_distributed[pp * cs_B + jj * rs_B];
+							for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
+							{
+								float A_ip = A_distributed[ii * cs_A + pp * rs_A];
+								// Using temp doesn't work here since it introduces
+								// small floating point precision errors
+								C_distributed[ii * cs_C + jj * rs_C] += A_ip * B_pj;
+							}
+						}
+					}
 				}
 			}
 		}
+
+		// Blocked JI only
+		// for (int j0 = 0; j0 < n0; j0 += block_size)
+		// {
+		// 	for (int p0 = 0; p0 < m0; ++p0)
+		// 	{
+		// 		for (int i0 = 0; i0 <= j0; i0 += block_size)
+		// 		{
+		// 			for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
+		// 			{
+		// 				float B_pj = B_distributed[p0 * cs_B + jj * rs_B];
+		// 				for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
+		// 				{
+		// 					float A_ip = A_distributed[ii * cs_A + p0 * rs_A];
+		// 					// Using temp doesn't work here since it introduces
+		// 					// small floating point precision errors
+		// 					C_distributed[ii * cs_C + jj * rs_C] += A_ip * B_pj;
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+
+		// Blocked PI only
+		// for (int j0 = 0; j0 < n0; ++j0)
+		// {
+		// 	for (int p0 = 0; p0 < m0; p0 += block_size)
+		// 	{
+		// 		for (int i0 = 0; i0 <= j0; i0 += block_size)
+		// 		{
+		// 			for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+		// 			{
+		// 				float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
+		// 				for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
+		// 				{
+		// 					float A_ip = A_distributed[ii * cs_A + pp * rs_A];
+		// 					// Using temp doesn't work here since it introduces
+		// 					// small floating point precision errors
+		// 					C_distributed[ii * cs_C + j0 * rs_C] += A_ip * B_pj;
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+
+		// Blocked I only
+		// for (int j0 = 0; j0 < n0; ++j0)
+		// {
+		// 	for (int p0 = 0; p0 < m0; ++p0)
+		// 	{
+		// 		for (int i0 = 0; i0 <= j0; i0 += block_size)
+		// 		{
+		// 			float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
+		// 			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
+		// 			{
+		// 				float A_ip = A_distributed[ii * cs_A + p0 * rs_A];
+		// 				// Using temp doesn't work here since it introduces
+		// 				// small floating point precision errors
+		// 				C_distributed[ii * cs_C + j0 * rs_C] += A_ip * B_pj;
+		// 			}
+		// 		}
+		// 	}
+		// }
+
+		// Blocked JP only doesn't seem possible?
 	}
 	else
 	{
