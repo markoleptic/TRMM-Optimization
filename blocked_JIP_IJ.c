@@ -105,6 +105,8 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 			{
 				for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
 				{
+					// if (m0 < 65)
+						// 	printf("jj: %d ii: ", jj);
 					for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
 					{
 						// if (m0 < 65)
