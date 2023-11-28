@@ -95,39 +95,33 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 8;
+	const int block_size = 64;
 
 	if (rid == root_rid)
 	{
-		for (int i0 = 0; i0 < n0; ++i0)
+		for (int j0 = 0; j0 < n0; j0 += block_size)
 		{
-			for (int p0 = 0; p0 < m0; ++p0)
+			for (int i0 = 0; i0 <= j0; i0 += block_size)
 			{
-				C_distributed[i0 * rs_C + p0] = 0.0f;
-			}
-		}
-		for (int j0 = 0; j0 < n0; ++j0)
-		{
-			for (int i0 = 0; i0 < j0; i0 += block_size)
-			{
-				for (int p0 = 0; p0 < m0; p0 += block_size)
+				for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
 				{
-					for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
+					// if (m0 < 65)
+						// 	printf("jj: %d ii: ", jj);
+					for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
 					{
-						// if (m0 < 65 && j0 < 14)
-						// 	printf("j0: %d ii: %d pp: ", j0, ii);
-						for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+						// if (m0 < 65)
+						// 	printf("%d ", ii);
+						float res = 0.0f;
+						for (int p0 = 0; p0 < m0; ++p0)
 						{
-							// if (m0 < 65 && j0 < 14)
-							// 	printf("%d ", pp);
-							float A_ip = A_distributed[ii * cs_A + pp * rs_A];
-							float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
-							// Using temp doesn't work here since it introduces small floating point precision errors
-							C_distributed[ii * cs_C + j0 * rs_C] += A_ip * B_pj;
+							float A_ip = A_distributed[ii * cs_A + p0 * rs_A];
+							float B_pj = B_distributed[p0 * cs_B + jj * rs_B];
+							res += A_ip * B_pj;
 						}
-						// if (m0 < 65 && j0 < 14)
-						// 	printf("\n");
+						C_distributed[ii * cs_C + jj * rs_C] = res;
 					}
+					// if (m0 < 65)
+					// 	printf("\n");
 				}
 			}
 		}
@@ -141,158 +135,55 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 
 // Access Pattern when block_size = 8:
 /*
-j0: 1 ii: 0 pp: 0 1 2 3 4 5 6 7
-j0: 1 ii: 0 pp: 8 9 10 11 12 13 14 15
-j0: 1 ii: 0 pp: 16 17 18 19 20 21 22 23
-j0: 1 ii: 0 pp: 24 25 26 27 28 29 30 31
-j0: 1 ii: 0 pp: 32 33 34 35 36 37 38 39
-j0: 1 ii: 0 pp: 40 41 42 43 44 45 46 47
-j0: 1 ii: 0 pp: 48 49 50 51 52 53 54 55
-j0: 1 ii: 0 pp: 56 57 58 59 60 61 62 63
-j0: 2 ii: 0 pp: 0 1 2 3 4 5 6 7
-j0: 2 ii: 1 pp: 0 1 2 3 4 5 6 7
-j0: 2 ii: 0 pp: 8 9 10 11 12 13 14 15
-j0: 2 ii: 1 pp: 8 9 10 11 12 13 14 15
-j0: 2 ii: 0 pp: 16 17 18 19 20 21 22 23
-j0: 2 ii: 1 pp: 16 17 18 19 20 21 22 23
-j0: 2 ii: 0 pp: 24 25 26 27 28 29 30 31
-j0: 2 ii: 1 pp: 24 25 26 27 28 29 30 31
-j0: 2 ii: 0 pp: 32 33 34 35 36 37 38 39
-j0: 2 ii: 1 pp: 32 33 34 35 36 37 38 39
-j0: 2 ii: 0 pp: 40 41 42 43 44 45 46 47
-j0: 2 ii: 1 pp: 40 41 42 43 44 45 46 47
-j0: 2 ii: 0 pp: 48 49 50 51 52 53 54 55
-j0: 2 ii: 1 pp: 48 49 50 51 52 53 54 55
-j0: 2 ii: 0 pp: 56 57 58 59 60 61 62 63
-j0: 2 ii: 1 pp: 56 57 58 59 60 61 62 63
-j0: 3 ii: 0 pp: 0 1 2 3 4 5 6 7
-j0: 3 ii: 1 pp: 0 1 2 3 4 5 6 7
-j0: 3 ii: 2 pp: 0 1 2 3 4 5 6 7
-j0: 3 ii: 0 pp: 8 9 10 11 12 13 14 15
-j0: 3 ii: 1 pp: 8 9 10 11 12 13 14 15
-j0: 3 ii: 2 pp: 8 9 10 11 12 13 14 15
-j0: 3 ii: 0 pp: 16 17 18 19 20 21 22 23
-j0: 3 ii: 1 pp: 16 17 18 19 20 21 22 23
-j0: 3 ii: 2 pp: 16 17 18 19 20 21 22 23
-j0: 3 ii: 0 pp: 24 25 26 27 28 29 30 31
-j0: 3 ii: 1 pp: 24 25 26 27 28 29 30 31
-j0: 3 ii: 2 pp: 24 25 26 27 28 29 30 31
-j0: 3 ii: 0 pp: 32 33 34 35 36 37 38 39
-j0: 3 ii: 1 pp: 32 33 34 35 36 37 38 39
-j0: 3 ii: 2 pp: 32 33 34 35 36 37 38 39
-j0: 3 ii: 0 pp: 40 41 42 43 44 45 46 47
-j0: 3 ii: 1 pp: 40 41 42 43 44 45 46 47
-j0: 3 ii: 2 pp: 40 41 42 43 44 45 46 47
-j0: 3 ii: 0 pp: 48 49 50 51 52 53 54 55
-j0: 3 ii: 1 pp: 48 49 50 51 52 53 54 55
-j0: 3 ii: 2 pp: 48 49 50 51 52 53 54 55
-j0: 3 ii: 0 pp: 56 57 58 59 60 61 62 63
-j0: 3 ii: 1 pp: 56 57 58 59 60 61 62 63
-j0: 3 ii: 2 pp: 56 57 58 59 60 61 62 63
-j0: 4 ii: 0 pp: 0 1 2 3 4 5 6 7
-j0: 4 ii: 1 pp: 0 1 2 3 4 5 6 7
-j0: 4 ii: 2 pp: 0 1 2 3 4 5 6 7
-j0: 4 ii: 3 pp: 0 1 2 3 4 5 6 7
-j0: 4 ii: 0 pp: 8 9 10 11 12 13 14 15
-j0: 4 ii: 1 pp: 8 9 10 11 12 13 14 15
-j0: 4 ii: 2 pp: 8 9 10 11 12 13 14 15
-j0: 4 ii: 3 pp: 8 9 10 11 12 13 14 15
-j0: 4 ii: 0 pp: 16 17 18 19 20 21 22 23
-j0: 4 ii: 1 pp: 16 17 18 19 20 21 22 23
-j0: 4 ii: 2 pp: 16 17 18 19 20 21 22 23
-j0: 4 ii: 3 pp: 16 17 18 19 20 21 22 23
-j0: 4 ii: 0 pp: 24 25 26 27 28 29 30 31
-j0: 4 ii: 1 pp: 24 25 26 27 28 29 30 31
-j0: 4 ii: 2 pp: 24 25 26 27 28 29 30 31
-j0: 4 ii: 3 pp: 24 25 26 27 28 29 30 31
-j0: 4 ii: 0 pp: 32 33 34 35 36 37 38 39
-j0: 4 ii: 1 pp: 32 33 34 35 36 37 38 39
-j0: 4 ii: 2 pp: 32 33 34 35 36 37 38 39
-j0: 4 ii: 3 pp: 32 33 34 35 36 37 38 39
-j0: 4 ii: 0 pp: 40 41 42 43 44 45 46 47
-j0: 4 ii: 1 pp: 40 41 42 43 44 45 46 47
-j0: 4 ii: 2 pp: 40 41 42 43 44 45 46 47
-j0: 4 ii: 3 pp: 40 41 42 43 44 45 46 47
-j0: 4 ii: 0 pp: 48 49 50 51 52 53 54 55
-j0: 4 ii: 1 pp: 48 49 50 51 52 53 54 55
-j0: 4 ii: 2 pp: 48 49 50 51 52 53 54 55
-j0: 4 ii: 3 pp: 48 49 50 51 52 53 54 55
-j0: 4 ii: 0 pp: 56 57 58 59 60 61 62 63
-j0: 4 ii: 1 pp: 56 57 58 59 60 61 62 63
-j0: 4 ii: 2 pp: 56 57 58 59 60 61 62 63
-j0: 4 ii: 3 pp: 56 57 58 59 60 61 62 63
+jj: 0 ii:
+jj: 1 ii: 0
+jj: 2 ii: 0 1
+jj: 3 ii: 0 1 2
+jj: 4 ii: 0 1 2 3
+jj: 5 ii: 0 1 2 3 4
+jj: 6 ii: 0 1 2 3 4 5
+jj: 7 ii: 0 1 2 3 4 5 6
+jj: 8 ii: 0 1 2 3 4 5 6 7
+jj: 9 ii: 0 1 2 3 4 5 6 7
+jj: 10 ii: 0 1 2 3 4 5 6 7
+jj: 11 ii: 0 1 2 3 4 5 6 7
+jj: 12 ii: 0 1 2 3 4 5 6 7
+jj: 13 ii: 0 1 2 3 4 5 6 7
+jj: 14 ii: 0 1 2 3 4 5 6 7
+jj: 15 ii: 0 1 2 3 4 5 6 7
+jj: 8 ii:
+jj: 9 ii: 8
+jj: 10 ii: 8 9
+jj: 11 ii: 8 9 10
+jj: 12 ii: 8 9 10 11
+jj: 13 ii: 8 9 10 11 12
+jj: 14 ii: 8 9 10 11 12 13
+jj: 15 ii: 8 9 10 11 12 13 14
+jj: 16 ii: 0 1 2 3 4 5 6 7
+jj: 17 ii: 0 1 2 3 4 5 6 7
+jj: 18 ii: 0 1 2 3 4 5 6 7
+jj: 19 ii: 0 1 2 3 4 5 6 7
+jj: 20 ii: 0 1 2 3 4 5 6 7
+jj: 21 ii: 0 1 2 3 4 5 6 7
+jj: 22 ii: 0 1 2 3 4 5 6 7
+jj: 23 ii: 0 1 2 3 4 5 6 7
+jj: 16 ii: 8 9 10 11 12 13 14 15
+jj: 17 ii: 8 9 10 11 12 13 14 15
+jj: 18 ii: 8 9 10 11 12 13 14 15
+jj: 19 ii: 8 9 10 11 12 13 14 15
+jj: 20 ii: 8 9 10 11 12 13 14 15
+jj: 21 ii: 8 9 10 11 12 13 14 15
+jj: 22 ii: 8 9 10 11 12 13 14 15
+jj: 23 ii: 8 9 10 11 12 13 14 15
+jj: 16 ii:
+jj: 17 ii: 16
+jj: 18 ii: 16 17
+jj: 19 ii: 16 17 18
+jj: 20 ii: 16 17 18 19
+jj: 21 ii: 16 17 18 19 20
+jj: 22 ii: 16 17 18 19 20 21
+jj: 23 ii: 16 17 18 19 20 21 22
 */
-
-// Old Code, can ignore:
-/*
-for (int j0 = 0; j0 < n0; ++j0)
-{
-	for (int i0 = 0; i0 < j0; i0 += block_size)
-	{
-		for (int pp = 0; pp < m0; pp += block_size)
-		{
-			if (m0 < 65 && j0 < 14)
-				printf("j0: %d io: %d pp: ", j0, ii);
-			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
-			{
-				if (m0 < 65 && j0 < 14)
-					printf("%d ", pp);
-				// Your computation here
-				float A_ip = A_distributed[ii * cs_A + pp * rs_A];
-				float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
-				C_distributed[ii * cs_C + j0 * rs_C] += A_ip * B_pj;
-			}
-			if (m0 < 65 && j0 < 14)
-				printf("\n");
-		}
-	}
-}
-for (int j0 = 0; j0 < n0; ++j0)
-{
-	for (int i0 = 0; i0 < j0; i0 += block_size)
-	{
-		for (int p0 = 0; p0 < m0; p0 += block_size)
-		{
-			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
-			{
-				if (m0 < 65 && j0 < 14)
-					printf("j0: %d ii: %d pp: ", j0, ii);
-				float res = 0.0f;
-				for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
-				{
-					if (m0 < 65 && j0 < 14)
-						printf("%d ", pp);
-					float A_ip = A_distributed[ii * cs_A + pp * rs_A];
-					float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
-					res += A_ip * B_pj;
-				}
-				C_distributed[ii * cs_C + j0 * rs_C] = res;
-				if (m0 < 65 && j0 < 14)
-					printf("\n");
-			}
-		}
-	}
-}
-for (int j0 = 0; j0 < n0; ++j0)
-{
-	for (int i0 = 0; i0 < j0; i0 += block_size)
-	{
-		for (int p0 = 0; p0 < m0; p0 += block_size)
-		{
-			for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
-			{
-				float res = 0.0f;
-				for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
-				{
-					float A_ip = A_distributed[ii * cs_A + pp * rs_A];
-					float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
-					res += A_ip * B_pj;
-				}
-				C_distributed[ii * cs_C + j0 * rs_C] = res;
-			}
-		}
-	}
-} */
 
 // Create the buffers on each node
 void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_distributed, float **C_distributed)

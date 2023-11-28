@@ -26,8 +26,8 @@
 MIN=64
 #MAX=8192 # good large number
 #MAX=4096 # medium size
-MAX=1024 # small devel size
-#MAX=512 # smaller devel size
+#MAX=1024 # small devel size
+MAX=512 # smaller devel size
 STEP=64
 
 
@@ -72,6 +72,9 @@ run-verifier-local: build-verifier-local
 	mpiexec -n ${NUMRANKS} ./run_test_op_var02.x  ${MIN} ${MAX} ${STEP} 1 1 result_verification_local_op_var02_k${KMEDIUM}.csv
 	cat result_verification_local_op_var02_k${KMEDIUM}.csv
 	mpiexec -n ${NUMRANKS} ./run_test_op_var03.x  ${MIN} ${MAX} ${STEP} 1 1 result_verification_local_op_var03_k${KMEDIUM}.csv
+	mpiexec -n ${NUMRANKS} ./run_test_op_var04.x  ${MIN} ${MAX} ${STEP} 1 1 result_verification_local_op_var04_k${KMEDIUM}.csv
+	mpiexec -n ${NUMRANKS} ./run_test_op_var05.x  ${MIN} ${MAX} ${STEP} 1 1 result_verification_local_op_var05_k${KMEDIUM}.csv
+	mpiexec -n ${NUMRANKS} ./run_test_op_var06.x  ${MIN} ${MAX} ${STEP} 1 1 result_verification_local_op_var06_k${KMEDIUM}.csv
 	cat result_verification_local_op_var03_k${KMEDIUM}.csv
 	echo "Number of FAILS: `grep "FAIL" result_verification_local_op_*.csv|wc -l`"
 
@@ -82,10 +85,13 @@ run-bench-local: build-bench-local
 	mpiexec -n ${NUMRANKS} ./run_bench_op_var02.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_local_op_var02_k${KMEDIUM}.csv
 	cat result_bench_local_op_var02_k${KMEDIUM}.csv
 	mpiexec -n ${NUMRANKS} ./run_bench_op_var03.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_local_op_var03_k${KMEDIUM}.csv
+	mpiexec -n ${NUMRANKS} ./run_bench_op_var04.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_local_op_var04_k${KMEDIUM}.csv
+	mpiexec -n ${NUMRANKS} ./run_bench_op_var05.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_local_op_var05_k${KMEDIUM}.csv
+	mpiexec -n ${NUMRANKS} ./run_bench_op_var06.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_local_op_var06_k${KMEDIUM}.csv
 	cat result_bench_local_op_var03_k${KMEDIUM}.csv
 
 
-	./plotter_multi.py "Local Results of Stencil Computation" "PLOT_local.png" "result_bench_local_op_var01_k${KMEDIUM}.csv" "result_bench_local_op_var02_k${KMEDIUM}.csv" "result_bench_local_op_var03_k${KMEDIUM}.csv"
+	./plotter_multi.py "Local Results of Stencil Computation" "PLOT_local.png" "result_bench_local_op_var01_k${KMEDIUM}.csv" "result_bench_local_op_var02_k${KMEDIUM}.csv" "result_bench_local_op_var03_k${KMEDIUM}.csv" "result_bench_local_op_var04_k${KMEDIUM}.csv" "result_bench_local_op_var05_k${KMEDIUM}.csv" "result_bench_local_op_var06_k${KMEDIUM}.csv"
 
 build-verifier-local:
 	./build_test_op.sh

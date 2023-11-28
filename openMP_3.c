@@ -100,7 +100,7 @@ void COMPUTE_NAME(int m0, int n0,
 
     if (rid == root_rid)
     {
-#pragma omp parallel for num_threads(2)
+#pragma omp parallel for num_threads(4)
         for (int j0 = 0; j0 < n0; ++j0)
         {
             for (int i0 = 0; i0 < j0; ++i0)
