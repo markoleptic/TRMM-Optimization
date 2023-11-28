@@ -71,8 +71,8 @@ extern void DISTRIBUTED_FREE_NAME_TST( int m0, int n0,
 
 void fill_buffer_with_random( int num_elems, float *buff )
 {
-  long long range = RAND_MAX;
-  //long long range = 1000;
+  //long long range = RAND_MAX;
+  long long range = 1000;
   
   for(int i = 0; i < num_elems; ++i)
     {

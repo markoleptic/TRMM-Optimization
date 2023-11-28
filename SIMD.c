@@ -99,7 +99,7 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 8;
+	const int block_size = 64;
 
 	if (rid == root_rid)
 	{
@@ -121,17 +121,20 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 					for (int jj = j0; jj < jj_max; ++jj)
 					{
 						int ii_max = MIN(i0 + block_size, jj);
-						if (ii_max - i0 >= 8)
+						if (ii_max - i0 >= block_size)
 						{
 							for (int pp = p0; pp < pp_max; ++pp)
 							{
 								__m256 B_pj = _mm256_set1_ps(B_distributed[pp * cs_B + jj * rs_B]);
 								for (int ii = i0; ii < ii_max; ii += 8)
 								{
-									__m256 A_ip = _mm256_loadu_ps(&A_distributed[ii * cs_A + pp * rs_A]);
-									__m256 C = _mm256_loadu_ps(&C_distributed[ii * cs_C + jj * rs_C]);
+									__m256 A_ip = _mm256_loadu_ps(
+									    &A_distributed[ii * cs_A + pp * rs_A]);
+									__m256 C = _mm256_loadu_ps(
+									    &C_distributed[ii * cs_C + jj * rs_C]);
 									C = _mm256_fmadd_ps(A_ip, B_pj, C);
-                                    _mm256_storeu_ps(&C_distributed[ii * cs_C + jj * rs_C], C);
+									_mm256_storeu_ps(
+									    &C_distributed[ii * cs_C + jj * rs_C], C);
 								}
 							}
 						}
@@ -140,41 +143,18 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 							for (int pp = p0; pp < pp_max; ++pp)
 							{
 								float B_pj = B_distributed[pp * cs_B + jj * rs_B];
-								for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
+								for (int ii = i0; ii < ii_max; ++ii)
 								{
-									float A_ip = A_distributed[ii * cs_A + pp * rs_A];
-									C_distributed[ii * cs_C + jj * rs_C] += A_ip * B_pj;
+									float A_ip =
+									    A_distributed[ii * cs_A + pp * rs_A];
+									C_distributed[ii * cs_C + jj * rs_C] +=
+									    A_ip * B_pj;
 								}
 							}
 						}
 					}
 				}
 			}
-		}
-		if (m0 == 64)
-		{
-			float *array = malloc(sizeof(float) * m0 * n0);
-			for (int i0 = 0; i0 < n0; ++i0)
-			{
-				for (int p0 = 0; p0 < m0; ++p0)
-				{
-					array[i0 * rs_C + p0] = 0.0f;
-				}
-			}
-			for (int j0 = 0; j0 < n0; ++j0)
-			{
-				for (int p0 = 0; p0 < m0; ++p0)
-				{
-					float B = B_distributed[p0 * cs_B + j0 * rs_B];
-					for (int i0 = 0; i0 < j0; ++i0)
-					{
-						float A = A_distributed[i0 * cs_A + p0 * rs_A];
-						array[i0 * cs_C + j0 * rs_C] += A * B;
-					}
-				}
-			}
-			printDistributedDiff(array, C_distributed, m0 * n0, "test.txt");
-			free(array);
 		}
 	}
 	else
@@ -296,6 +276,31 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 // 			}
 // 		}
 // 	}
+// }
+// if (m0 == 64)
+// {
+// 	float *array = malloc(sizeof(float) * m0 * n0);
+// 	for (int i0 = 0; i0 < n0; ++i0)
+// 	{
+// 		for (int p0 = 0; p0 < m0; ++p0)
+// 		{
+// 			array[i0 * rs_C + p0] = 0.0f;
+// 		}
+// 	}
+// 	for (int j0 = 0; j0 < n0; ++j0)
+// 	{
+// 		for (int p0 = 0; p0 < m0; ++p0)
+// 		{
+// 			float B = B_distributed[p0 * cs_B + j0 * rs_B];
+// 			for (int i0 = 0; i0 < j0; ++i0)
+// 			{
+// 				float A = A_distributed[i0 * cs_A + p0 * rs_A];
+// 				array[i0 * cs_C + j0 * rs_C] += A * B;
+// 			}
+// 		}
+// 	}
+// 	printDistributedDiff(array, C_distributed, m0 * n0, "test.txt");
+// 	free(array);
 // }
 
 // Create the buffers on each node
