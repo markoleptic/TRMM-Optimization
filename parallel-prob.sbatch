@@ -51,4 +51,4 @@ mpiexec ./run_bench_op_var06.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var06.
 module unload OpenMPI
 module load scikit-learn/0.23.1-foss-2020a-Python-3.8.2
 module load matplotlib/3.2.1-foss-2019b-Python-3.8.2
-./plotter_multi.py "Size vs Throughput" "PLOT_schooner.png" result_bench_op_var01.csv result_bench_op_var02.csv #result_bench_op_var03.csv
+./plotter_multi.py "Size vs Throughput" "PLOT_schooner.png" result_bench_op_var01.csv result_bench_op_var02.csv result_bench_op_var03.csv result_bench_op_var04.csv result_bench_op_var05.csv result_bench_op_var06.csv
