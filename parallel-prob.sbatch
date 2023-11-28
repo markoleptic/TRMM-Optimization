@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --partition=debug_5min
+#SBATCH --partition=normal
 #SBATCH --exclusive
 #SBATCH --nodes=2                   # <--- Nodes for MPI
 #SBATCH --ntasks=16                 # <--- Adjust these if you are mixing MPI and OpenMP
 #SBATCH --ntasks-per-node=8         # <---
 #SBATCH --output=./jobname_%J_stdout.txt
 #SBATCH --error=./jobname_%J_stderr.txt
-#SBATCH --time=5:00
+#SBATCH --time=10:00
 #SBATCH --job-name=cs4473_cs5473_lab02
 #SBATCH --mail-user=youremailaddress@yourinstitution.edu
 #SBATCH --mail-type=ALL
