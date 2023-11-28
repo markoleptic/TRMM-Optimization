@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --partition=normal
+#SBATCH --partition=debug_5min
 #SBATCH --exclusive
 #SBATCH --nodes=2                   # <--- Nodes for MPI
 #SBATCH --ntasks=16                 # <--- Adjust these if you are mixing MPI and OpenMP
 #SBATCH --ntasks-per-node=8         # <---
 #SBATCH --output=./jobname_%J_stdout.txt
 #SBATCH --error=./jobname_%J_stderr.txt
-#SBATCH --time=10:00
-#SBATCH --job-name=cs4473_cs5473_lab02
+#SBATCH --time=5:00
+#SBATCH --job-name=cs4473_cs5473_lab02_group8
 #SBATCH --mail-user=youremailaddress@yourinstitution.edu
 #SBATCH --mail-type=ALL
 #SBATCH --chdir=./
@@ -33,9 +33,6 @@ cat /proc/cpuinfo # low level cpu details
 mpiexec ./run_test_op_var01.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var01.csv
 mpiexec ./run_test_op_var02.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var02.csv
 mpiexec ./run_test_op_var03.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var03.csv
-mpiexec ./run_test_op_var04.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var04.csv
-mpiexec ./run_test_op_var05.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var05.csv
-mpiexec ./run_test_op_var06.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var06.csv
 
 echo "Number of FAILS: `grep "FAIL" result_verification_op_*.csv|wc -l`"
 
@@ -43,12 +40,9 @@ echo "Number of FAILS: `grep "FAIL" result_verification_op_*.csv|wc -l`"
 mpiexec ./run_bench_op_var01.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var01.csv
 mpiexec ./run_bench_op_var02.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var02.csv
 mpiexec ./run_bench_op_var03.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var03.csv
-mpiexec ./run_bench_op_var04.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var04.csv
-mpiexec ./run_bench_op_var05.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var05.csv
-mpiexec ./run_bench_op_var06.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var06.csv
 
 # plot the results
 module unload OpenMPI
 module load scikit-learn/0.23.1-foss-2020a-Python-3.8.2
 module load matplotlib/3.2.1-foss-2019b-Python-3.8.2
-./plotter_multi.py "Size vs Throughput" "PLOT_schooner.png" result_bench_op_var01.csv result_bench_op_var02.csv result_bench_op_var03.csv result_bench_op_var04.csv result_bench_op_var05.csv result_bench_op_var06.csv
+./plotter_multi.py "Size vs Throughput" "PLOT_schooner.png" result_bench_op_var01.csv result_bench_op_var02.csv result_bench_op_var03.csv

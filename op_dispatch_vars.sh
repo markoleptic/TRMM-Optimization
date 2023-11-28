@@ -9,15 +9,15 @@ OP_BASELINE_FILE="baseline_op.c"    #
 # HOWEVER, CHANGE THESE LINES:             #
 # Replace the filenames with your variants #
 ############################################
-# OP_SUBMISSION_VAR01_FILE="SIMD.c"
-# OP_SUBMISSION_VAR02_FILE="openMP.c"
-# OP_SUBMISSION_VAR03_FILE="blocked_JIP_JIP.c"
-OP_SUBMISSION_VAR01_FILE="noifstatementvarIJP.c"
-OP_SUBMISSION_VAR02_FILE="noifstatementvarIPJ.c"
-OP_SUBMISSION_VAR03_FILE="noifstatementvarJIP.c"
-OP_SUBMISSION_VAR04_FILE="noifstatementvarJPI.c"
-OP_SUBMISSION_VAR05_FILE="noifstatementvarPIJ.c"
-OP_SUBMISSION_VAR06_FILE="noifstatementvarPJI.c"
+OP_SUBMISSION_VAR01_FILE="blocked_JIP_IJ_1.c"
+OP_SUBMISSION_VAR02_FILE="blocked_JIP_IJ_2.c"
+OP_SUBMISSION_VAR03_FILE="blocked_JIP_IJ_3.c"
+# OP_SUBMISSION_VAR01_FILE="noifstatementvarIJP.c"
+# OP_SUBMISSION_VAR02_FILE="noifstatementvarIPJ.c"
+# OP_SUBMISSION_VAR03_FILE="noifstatementvarJIP.c"
+# OP_SUBMISSION_VAR04_FILE="noifstatementvarJPI.c"
+# OP_SUBMISSION_VAR05_FILE="noifstatementvarPIJ.c"
+# OP_SUBMISSION_VAR06_FILE="noifstatementvarPJI.c"
 
 ######################################################
 # You can even change the compiler flags if you want #
