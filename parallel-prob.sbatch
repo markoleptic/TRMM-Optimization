@@ -33,6 +33,9 @@ cat /proc/cpuinfo # low level cpu details
 mpiexec ./run_test_op_var01.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var01.csv
 mpiexec ./run_test_op_var02.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var02.csv
 mpiexec ./run_test_op_var03.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var03.csv
+mpiexec ./run_test_op_var04.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var04.csv
+mpiexec ./run_test_op_var05.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var05.csv
+mpiexec ./run_test_op_var06.x ${MIN} ${MAX} ${STEP} 1 1  result_verification_op_var06.csv
 
 echo "Number of FAILS: `grep "FAIL" result_verification_op_*.csv|wc -l`"
 
@@ -40,7 +43,9 @@ echo "Number of FAILS: `grep "FAIL" result_verification_op_*.csv|wc -l`"
 mpiexec ./run_bench_op_var01.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var01.csv
 mpiexec ./run_bench_op_var02.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var02.csv
 mpiexec ./run_bench_op_var03.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var03.csv
-
+mpiexec ./run_bench_op_var04.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var04.csv
+mpiexec ./run_bench_op_var05.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var05.csv
+mpiexec ./run_bench_op_var06.x ${MIN} ${MAX} ${STEP} 1 1  result_bench_op_var06.csv
 
 # plot the results
 module unload OpenMPI
