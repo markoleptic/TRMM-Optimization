@@ -66,6 +66,8 @@
 #define DISTRIBUTED_FREE_NAME baseline_free
 #endif
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 void COMPUTE_NAME(int m0, int n0,
                   float *A_distributed,
                   float *B_distributed,
@@ -98,9 +100,18 @@ void COMPUTE_NAME(int m0, int n0,
     MPI_Comm_rank(MPI_COMM_WORLD, &rid);
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
+    const int block_size = 16;
+
     if (rid == root_rid)
     {
-#pragma omp parallel for num_threads(8)
+        for (int i0 = 0; i0 < n0; ++i0)
+		{
+			for (int p0 = 0; p0 < m0; ++p0)
+			{
+				C_distributed[i0 * rs_C + p0] = 0.0f;
+			}
+		}
+#pragma omp parallel for num_threads(8) collapse(2) reduction(+:C_distributed[:n0*m0])
 		for (int j0 = 0; j0 < n0; ++j0)
 		{
 			for (int p0 = 0; p0 < m0; ++p0)
