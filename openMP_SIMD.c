@@ -41,10 +41,14 @@
 
 */
 
+#include "utils.c"
+#include <immintrin.h>
 #include <mpi.h>
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #ifndef COMPUTE_NAME
 #define COMPUTE_NAME baseline
@@ -95,25 +99,66 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 16;
+	const int block_size = 64;
 
 	if (rid == root_rid)
 	{
-		// It performs way too slow to only parallelize the p-loop
-        #pragma omp parallel for num_threads(2)
-		for (int j0 = 0; j0 < n0; ++j0)
+		for (int i0 = 0; i0 < n0; ++i0)
 		{
-			for (int i0 = 0; i0 < j0; ++i0)
+			for (int p0 = 0; p0 < m0; ++p0)
 			{
-				float res = 0.0f;
-				for (int p0 = 0; p0 < m0; ++p0)
+				C_distributed[i0 * rs_C + p0] = 0.0f;
+			}
+		}
+        #pragma omp parallel for num_threads(8)
+		for (int j0 = 0; j0 < n0; j0 += block_size)
+		{
+			for (int p0 = 0; p0 < m0; p0 += block_size)
+			{
+				for (int i0 = 0; i0 <= j0; i0 += block_size)
 				{
-					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
-					float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
-					res += A_ip * B_pj;
+                    int jj_max = MIN(j0 + block_size, n0);
+					for (int jj = j0; jj < jj_max; ++jj)
+					{
+						int ii_max = MIN(i0 + block_size, jj);
+                        int pp_max = MIN(p0 + block_size, m0);
+                        // This checks if along the diagonal or not. If the block (ii_max - i)
+						// is large enough, it isn't on the diagonal, and we can proceed with
+						// simd. Otherwise use default
+						if (ii_max - i0 >= block_size)
+						{
+							for (int pp = p0; pp < pp_max; ++pp)
+							{
+                                // "Broadcast" B values
+								__m256 B_pj = _mm256_set1_ps(B_distributed[pp * cs_B + jj * rs_B]);
+								for (int ii = i0; ii < ii_max; ii += 8)
+								{
+									__m256 A_ip = _mm256_loadu_ps(
+									    &A_distributed[ii * cs_A + pp * rs_A]);
+									__m256 C = _mm256_loadu_ps(
+									    &C_distributed[ii * cs_C + jj * rs_C]);
+									C = _mm256_fmadd_ps(A_ip, B_pj, C);
+									_mm256_storeu_ps(
+									    &C_distributed[ii * cs_C + jj * rs_C], C);
+								}
+							}
+						}
+						else
+						{
+							for (int pp = p0; pp < pp_max; ++pp)
+							{
+								float B_pj = B_distributed[pp * cs_B + jj * rs_B];
+								for (int ii = i0; ii < ii_max; ++ii)
+								{
+									float A_ip =
+									    A_distributed[ii * cs_A + pp * rs_A];
+									C_distributed[ii * cs_C + jj * rs_C] +=
+									    A_ip * B_pj;
+								}
+							}
+						}
+					}
 				}
-                #pragma omp critical
-				C_distributed[i0 * cs_C + j0 * rs_C] = res;
 			}
 		}
 	}
@@ -123,6 +168,145 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 		 than 1 rank to do work in distributed memory context. */
 	}
 }
+
+// old code
+// for (int j0 = 0; j0 < n0; j0 += block_size) {
+//     int jj_max = MIN(j0 + block_size, n0);
+//     for (int p0 = 0; p0 < m0; p0 += block_size) {
+//         int pp_max = MIN(p0 + block_size, m0);
+//         for (int i0 = 0; i0 <= j0; i0 += block_size) {
+//             for (int jj = j0; jj < jj_max; ++jj) {
+//                 int ii_max = MIN(i0 + block_size, jj);
+//                 for (int pp = p0; pp < pp_max; ++pp) {
+//                     __m256 B_pj = _mm256_set1_ps(B_distributed[pp * cs_B + jj * rs_B]);
+//                     for (int ii = i0; ii < ii_max; ii += 8) {
+//                         __m256 A_ip = _mm256_loadu_ps(&A_distributed[ii * cs_A + pp * rs_A]);
+//                         __m256 C = _mm256_loadu_ps(&C_distributed[ii * cs_C + jj * rs_C]);
+//                         C = _mm256_fmadd_ps(A_ip, B_pj, C);
+//                         _mm256_storeu_ps(&C_distributed[ii * cs_C + jj * rs_C], C);
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+// for (int j0 = 0; j0 < n0; j0 += block_size)
+// {
+//     int jj_max = MIN(j0 + block_size, n0);
+// 	for (int p0 = 0; p0 < m0; p0 += block_size)
+// 	{
+//         int pp_max = MIN(p0 + block_size, m0);
+// 		for (int i0 = 0; i0 <= j0; i0 += block_size)
+// 		{
+// 			for (int jj = j0; jj < jj_max; ++jj)
+// 			{
+//                 int ii_max = MIN(i0 + block_size, jj);
+// 				if (MIN(i0 + 8, jj) - i0 > 8)
+// 				{
+// 					for (int pp = p0; pp < pp_max; ++pp)
+// 					{
+//                         __m256 B_pj = _mm256_set1_ps(B_distributed[pp * cs_B + jj * rs_B]);
+// 						__m256 C = _mm256_loadu_ps(&C_distributed[i0 * cs_C + jj
+// * rs_C]); 						for (int ii = i0; ii < ii_max; ii += 8)
+// 						{
+// 							__m256 A_ip = _mm256_loadu_ps(&A_distributed[i0 *
+// cs_A
+// + pp
+// * rs_A]); 							C = _mm256_fmadd_ps(A_ip, B_pj, C);
+// 						}
+// 						_mm256_storeu_ps(&C_distributed[i0 * cs_C + jj * rs_C],
+// C);
+// 					}
+// 				}
+// 				else
+// 				{
+// 					for (int pp = p0; pp < pp_max; ++pp)
+// 					{
+// 						float B_pj = B_distributed[pp * cs_B + jj * rs_B];
+// 						for (int ii = i0; ii < ii_max; ++ii)
+// 						{
+// 							float A_ip = A_distributed[ii * cs_A + pp *
+// rs_A]; 							C_distributed[ii * cs_C + jj * rs_C] +=
+// A_ip
+// * B_pj;
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+// for (int j0 = 0; j0 < n0; j0 += block_size)
+// {
+// 	for (int p0 = 0; p0 < m0; p0 += block_size)
+// 	{
+// 		for (int i0 = 0; i0 <= j0; i0 += block_size)
+// 		{
+// 			for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
+// 			{
+//                 int ii_max = MIN(i0 + block_size, jj);
+// 				if (MIN(i0 + 8, jj) - i0 > 8)
+// 				{
+//                     greaterThanEight++;
+// 					for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+// 					{
+// 						__m256 c0 = _mm256_loadu_ps(
+// 						    &C_distributed[i0 * cs_C + jj * rs_C]);
+// 						for (int ii = i0; ii < ii_max; ii += 8)
+// 						{
+// 							float B = B_distributed[pp * cs_B + jj * rs_B];
+// 							__m256 a0 = _mm256_loadu_ps(
+// 							    &A_distributed[i0 * cs_A + pp * rs_A]);
+// 							c0 = _mm256_fmadd_ps(a0, _mm256_set1_ps(B), c0);
+// 						}
+// 						_mm256_storeu_ps(&C_distributed[i0 * cs_C + jj * rs_C],
+// 								 c0);
+// 					}
+// 				}
+// 				else
+// 				{
+//                     lessThanEight++;
+// 					for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+// 					{
+// 						float B_pj = B_distributed[pp * cs_B + jj * rs_B];
+// 						for (int ii = i0; ii < ii_max; ++ii)
+// 						{
+// 							float A_ip =
+// 							    A_distributed[ii * cs_A + pp * rs_A];
+// 							C_distributed[ii * cs_C + jj * rs_C] +=
+// 							    A_ip * B_pj;
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+// if (m0 == 64)
+// {
+// 	float *array = malloc(sizeof(float) * m0 * n0);
+// 	for (int i0 = 0; i0 < n0; ++i0)
+// 	{
+// 		for (int p0 = 0; p0 < m0; ++p0)
+// 		{
+// 			array[i0 * rs_C + p0] = 0.0f;
+// 		}
+// 	}
+// 	for (int j0 = 0; j0 < n0; ++j0)
+// 	{
+// 		for (int p0 = 0; p0 < m0; ++p0)
+// 		{
+// 			float B = B_distributed[p0 * cs_B + j0 * rs_B];
+// 			for (int i0 = 0; i0 < j0; ++i0)
+// 			{
+// 				float A = A_distributed[i0 * cs_A + p0 * rs_A];
+// 				array[i0 * cs_C + j0 * rs_C] += A * B;
+// 			}
+// 		}
+// 	}
+// 	printDistributedDiff(array, C_distributed, m0 * n0, "test.txt");
+// 	free(array);
+// }
 
 // Create the buffers on each node
 void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_distributed, float **C_distributed)

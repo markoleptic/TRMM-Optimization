@@ -99,10 +99,12 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 64;
+	const int block_size = 8;
 
 	if (rid == root_rid)
 	{
+		/* Initialize with 0 because the initial value will be random garbage,
+		   necessary because using += operator in the i0 loop */
 		for (int i0 = 0; i0 < n0; ++i0)
 		{
 			for (int p0 = 0; p0 < m0; ++p0)
@@ -121,11 +123,16 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 					for (int jj = j0; jj < jj_max; ++jj)
 					{
 						int ii_max = MIN(i0 + block_size, jj);
+						// This checks if along the diagonal or not. If the block (ii_max - i)
+						// is large enough, it isn't on the diagonal, and we can proceed with
+						// simd. Otherwise use default
 						if (ii_max - i0 >= block_size)
 						{
 							for (int pp = p0; pp < pp_max; ++pp)
 							{
-								__m256 B_pj = _mm256_set1_ps(B_distributed[pp * cs_B + jj * rs_B]);
+								// "Broadcast" B values
+								__m256 B_pj = _mm256_set1_ps(
+								    B_distributed[pp * cs_B + jj * rs_B]);
 								for (int ii = i0; ii < ii_max; ii += 8)
 								{
 									__m256 A_ip = _mm256_loadu_ps(

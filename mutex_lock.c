@@ -102,6 +102,7 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 
 	if (rid == root_rid)
 	{
+		// It performs way too slow to only parallelize the p-loop
 		#pragma omp parallel for num_threads(8)
 		for (int j0 = 0; j0 < n0; ++j0)
 		{

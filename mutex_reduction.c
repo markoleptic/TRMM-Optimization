@@ -99,12 +99,14 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 
 	if (rid == root_rid)
 	{
-        #pragma omp parallel for num_threads(8) reduction(+ : C_distributed[:n0*m0])
+		float res = 0.0f;
+		// It performs way too slow to only parallelize the p-loop
+        #pragma omp parallel for num_threads(8) reduction(+ : res)
 		for (int j0 = 0; j0 < n0; ++j0)
 		{
 			for (int i0 = 0; i0 < j0; ++i0)
 			{
-				float res = 0.0f;
+				res = 0.0f;
 				for (int p0 = 0; p0 < m0; ++p0)
 				{
 					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
