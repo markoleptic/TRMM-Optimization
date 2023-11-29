@@ -95,11 +95,11 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 8;
+	const int block_size = 640;
 
 	if (rid == root_rid)
 	{
-        for (int i0 = 0; i0 < n0; ++i0)
+		for (int i0 = 0; i0 < n0; ++i0)
 		{
 			for (int p0 = 0; p0 < m0; ++p0)
 			{
@@ -108,18 +108,21 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 		}
 		for (int j0 = 0; j0 < n0; j0 += block_size)
 		{
+			int jj_max = MIN(j0 + block_size, n0);
 			for (int i0 = 0; i0 <= j0; i0 += block_size)
 			{
 				for (int p0 = 0; p0 < m0; p0 += block_size)
 				{
-					for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
+					int pp_max = MIN(p0 + block_size, m0);
+					for (int jj = j0; jj < jj_max; ++jj)
 					{
-						for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
+						int ii_max = MIN(i0 + block_size, jj);
+						for (int ii = i0; ii < ii_max; ++ii)
 						{
-							for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+							for (int pp = p0; pp < pp_max; ++pp)
 							{
-								float A_ip = A_distributed[ii * cs_A + pp * rs_A];
 								float B_pj = B_distributed[pp * cs_B + jj * rs_B];
+								float A_ip = A_distributed[ii * cs_A + pp * rs_A];
 								C_distributed[ii * cs_C + jj * rs_C] += A_ip * B_pj;
 							}
 						}
@@ -127,6 +130,30 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 				}
 			}
 		}
+		// for (int j0 = 0; j0 < n0; j0 += block_size)
+		// {
+		// 	int jj_max = MIN(j0 + block_size, n0);
+		// 	for (int i0 = 0; i0 <= j0; i0 += block_size)
+		// 	{
+		// 		for (int p0 = 0; p0 < m0; p0 += block_size)
+		// 		{
+		// 			int pp_max = MIN(p0 + block_size, m0);
+		// 			for (int jj = j0; jj < jj_max; ++jj)
+		// 			{
+		// 				for (int pp = p0; pp < pp_max; ++pp)
+		// 				{
+		// 					int ii_max = MIN(i0 + block_size, jj);
+		// 					float B_pj = B_distributed[pp * cs_B + jj * rs_B];
+		// 					for (int ii = i0; ii < ii_max; ++ii)
+		// 					{
+		// 						float A_ip = A_distributed[ii * cs_A + pp * rs_A];
+		// 						C_distributed[ii * cs_C + jj * rs_C] += A_ip * B_pj;
+		// 					}
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 	else
 	{

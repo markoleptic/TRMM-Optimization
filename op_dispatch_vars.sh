@@ -9,9 +9,9 @@ OP_BASELINE_FILE="baseline_op.c"    #
 # HOWEVER, CHANGE THESE LINES:             #
 # Replace the filenames with your variants #
 ############################################
-OP_SUBMISSION_VAR01_FILE="blocked_JIP_IP_1.c"
-OP_SUBMISSION_VAR02_FILE="blocked_JIP_IP_2.c"
-OP_SUBMISSION_VAR03_FILE="blocked_JIP_IP_3.c"
+OP_SUBMISSION_VAR01_FILE="blocked_JPI_1.c"
+OP_SUBMISSION_VAR02_FILE="blocked_JPI_2.c"
+OP_SUBMISSION_VAR03_FILE="blocked_JPI_3.c"
 # OP_SUBMISSION_VAR01_FILE="noifstatementvarIJP.c"
 # OP_SUBMISSION_VAR02_FILE="noifstatementvarIPJ.c"
 # OP_SUBMISSION_VAR03_FILE="noifstatementvarJIP.c"
@@ -24,5 +24,5 @@ OP_SUBMISSION_VAR03_FILE="blocked_JIP_IP_3.c"
 ######################################################
 CC=mpicc
 # CFLAGS="-std=c99 -O2"
-CFLAGS="-std=c99 -O2 -mavx2 -mfma -fopenmp -fopt-info-vec-optimized"
+CFLAGS="-std=c99 -O2 -mavx2 -mfma -fopenmp"
 

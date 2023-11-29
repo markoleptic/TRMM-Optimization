@@ -110,18 +110,21 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 		// All blocked (performs best)
 		for (int j0 = 0; j0 < n0; j0 += block_size)
 		{
+			int jj_max = MIN(j0 + block_size, n0);
 			for (int p0 = 0; p0 < m0; p0 += block_size)
 			{
+				int pp_max = MIN(p0 + block_size, m0);
 				for (int i0 = 0; i0 <= j0; i0 += block_size)
 				{
-					for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
+					for (int jj = j0; jj < jj_max; ++jj)
 					{
-						for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+						int ii_max = MIN(i0 + block_size, jj);
+						for (int pp = p0; pp < pp_max; ++pp)
 						{
 							// if (m0 < 65 && jj == 32)
 							// 	printf("jj: %d pp: %d ii: ", jj, pp);
 							float B_pj = B_distributed[pp * cs_B + jj * rs_B];
-							for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
+							for (int ii = i0; ii < ii_max; ++ii)
 							{
 								// if (m0 < 65 && jj == 32)
 								// 	printf("%d ", ii);
