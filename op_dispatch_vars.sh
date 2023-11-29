@@ -9,9 +9,9 @@ OP_BASELINE_FILE="baseline_op.c"    #
 # HOWEVER, CHANGE THESE LINES:             #
 # Replace the filenames with your variants #
 ############################################
-OP_SUBMISSION_VAR01_FILE="blocked_JPI_1.c"
-OP_SUBMISSION_VAR02_FILE="blocked_JPI_2.c"
-OP_SUBMISSION_VAR03_FILE="blocked_JPI_3.c"
+OP_SUBMISSION_VAR01_FILE="openMP.c"
+OP_SUBMISSION_VAR02_FILE="openMP_2.c"
+OP_SUBMISSION_VAR03_FILE="openMP_3.c"
 # OP_SUBMISSION_VAR01_FILE="noifstatementvarIJP.c"
 # OP_SUBMISSION_VAR02_FILE="noifstatementvarIPJ.c"
 # OP_SUBMISSION_VAR03_FILE="noifstatementvarJIP.c"

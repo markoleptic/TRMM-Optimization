@@ -17,8 +17,8 @@
 MIN=64
 #MAX=8192 # good large number
 #MAX=4096 # medium size
-MAX=960 # small devel size
-STEP=64
+MAX=1024 # small devel size
+STEP=32
 
 
 module load OpenMPI
