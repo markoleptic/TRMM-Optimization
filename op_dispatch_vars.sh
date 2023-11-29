@@ -9,6 +9,9 @@ OP_BASELINE_FILE="baseline_op.c"    #
 # HOWEVER, CHANGE THESE LINES:             #
 # Replace the filenames with your variants #
 ############################################
+# OP_SUBMISSION_VAR01_FILE="mutex_critical_section.c"
+# OP_SUBMISSION_VAR02_FILE="mutex_lock.c"
+# OP_SUBMISSION_VAR03_FILE="mutex_reduction.c"
 OP_SUBMISSION_VAR01_FILE="openMP.c"
 OP_SUBMISSION_VAR02_FILE="openMP_2.c"
 OP_SUBMISSION_VAR03_FILE="openMP_3.c"

@@ -106,7 +106,7 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 				C_distributed[i0 * rs_C + p0] = 0.0f;
 			}
 		}
-#pragma omp parallel for num_threads(2) collapse(2) reduction(+:C_distributed[:n0*m0])
+#pragma omp parallel for num_threads(2) /*collapse(2) reduction(+:C_distributed[:n0*m0])*/
 		for (int j0 = 0; j0 < n0; ++j0)
 		{
 			for (int p0 = 0; p0 < m0; ++p0)

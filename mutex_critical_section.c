@@ -99,7 +99,7 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 
 	if (rid == root_rid)
 	{
-#pragma omp parallel for num_threads(8)
+        #pragma omp parallel for num_threads(2)
 		for (int j0 = 0; j0 < n0; ++j0)
 		{
 			for (int i0 = 0; i0 < j0; ++i0)
@@ -111,10 +111,8 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 					float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
 					res += A_ip * B_pj;
 				}
-#pragma omp critical
-				{
-					C_distributed[i0 * cs_C + j0 * rs_C] = res;
-				}
+                #pragma omp critical
+				C_distributed[i0 * cs_C + j0 * rs_C] = res;
 			}
 		}
 	}
