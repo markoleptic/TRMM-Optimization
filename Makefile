@@ -26,8 +26,8 @@
 MIN=64
 #MAX=8192 # good large number
 #MAX=4096 # medium size
-#MAX=1024 # small devel size
-MAX=512 # smaller devel size
+MAX=1024 # small devel size
+#MAX=512 # smaller devel size
 STEP=64
 
 
@@ -85,7 +85,7 @@ run-bench-local: build-bench-local
 	cat result_bench_local_op_var03_k${KMEDIUM}.csv
 
 
-	./plotter_multi.py "Local Results of Stencil Computation" "PLOT_local.png" "result_bench_local_op_var01_k${KMEDIUM}.csv" "result_bench_local_op_var02_k${KMEDIUM}.csv" "result_bench_local_op_var03_k${KMEDIUM}.csv"
+	./plotter_multi.py "Size vs Throughput" "PLOT_local.png" "result_bench_local_op_var01_k${KMEDIUM}.csv" "result_bench_local_op_var02_k${KMEDIUM}.csv" "result_bench_local_op_var03_k${KMEDIUM}.csv"
 
 build-verifier-local:
 	./build_test_op.sh
