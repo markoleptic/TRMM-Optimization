@@ -26,8 +26,8 @@
 MIN=64
 #MAX=8192 # good large number
 #MAX=4096 # medium size
-MAX=1024 # small devel size
-#MAX=512 # smaller devel size
+#MAX=1024 # small devel size
+MAX=512 # smaller devel size
 STEP=64
 
 

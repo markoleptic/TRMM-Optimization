@@ -114,19 +114,13 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 				{
 					for (int ii = i0; ii < MIN(i0 + block_size, j0); ++ii)
 					{
-						// if (m0 < 65 && j0 < 14)
-						// 	printf("j0: %d ii: %d pp: ", j0, ii);
 						for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
 						{
-							// if (m0 < 65 && j0 < 14)
-							// 	printf("%d ", pp);
 							float A_ip = A_distributed[ii * cs_A + pp * rs_A];
 							float B_pj = B_distributed[pp * cs_B + j0 * rs_B];
 							// Using temp doesn't work here since it introduces small floating point precision errors
 							C_distributed[ii * cs_C + j0 * rs_C] += A_ip * B_pj;
 						}
-						// if (m0 < 65 && j0 < 14)
-						// 	printf("\n");
 					}
 				}
 			}

@@ -95,7 +95,7 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-	const int block_size = 8;
+	const int block_size = 64;
 
 	if (rid == root_rid)
 	{
@@ -106,7 +106,6 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 				C_distributed[i0 * rs_C + p0] = 0.0f;
 			}
 		}
-
 		// All blocked (performs best)
 		for (int j0 = 0; j0 < n0; j0 += block_size)
 		{

@@ -9,9 +9,9 @@ OP_BASELINE_FILE="baseline_op.c"    #
 # HOWEVER, CHANGE THESE LINES:             #
 # Replace the filenames with your variants #
 ############################################
-OP_SUBMISSION_VAR01_FILE="openMP_3.c"
-OP_SUBMISSION_VAR02_FILE="SIMD.c"
-OP_SUBMISSION_VAR03_FILE="openMP_SIMD.c"
+OP_SUBMISSION_VAR01_FILE="blocked_JPI_1.c"
+OP_SUBMISSION_VAR02_FILE="blocked_JPI_2.c"
+OP_SUBMISSION_VAR03_FILE="blocked_JPI_3.c"
 
 # OP_SUBMISSION_VAR01_FILE="tuned_variant01_op.c"
 # OP_SUBMISSION_VAR02_FILE="tuned_variant02_op.c"
