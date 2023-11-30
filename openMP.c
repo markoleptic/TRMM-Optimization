@@ -42,6 +42,7 @@
 */
 
 #include <mpi.h>
+#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -64,6 +65,8 @@
 #ifndef DISTRIBUTED_FREE_NAME
 #define DISTRIBUTED_FREE_NAME baseline_free
 #endif
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, float *C_distributed)
 
@@ -94,23 +97,52 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
+	const int block_size = 128;
+
 	if (rid == root_rid)
 	{
 		for (int i0 = 0; i0 < n0; ++i0)
 		{
-			for (int j0 = i0 + 1; j0 < n0; ++j0)
+			for (int p0 = 0; p0 < m0; ++p0)
 			{
-				float res = 0.0f;
-				for (int p0 = 0; p0 < m0; ++p0)
-				{
-					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
-					float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
-
-					res += A_ip * B_pj;
-				}
-				C_distributed[i0 * cs_C + j0 * rs_C] = res;
+				C_distributed[i0 * rs_C + p0] = 0.0f;
 			}
 		}
+#pragma omp parallel for num_threads(2) collapse(2) /*reduction(+:C_distributed[:n0*m0])*/
+		for (int j0 = 0; j0 < n0; ++j0)
+		{
+			for (int p0 = 0; p0 < m0; ++p0)
+			{
+                float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
+				for (int i0 = 0; i0 < j0; ++i0)
+				{
+					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
+					C_distributed[i0 * cs_C + j0 * rs_C] += A_ip * B_pj;
+				}
+			}
+		}
+// #pragma omp parallel for num_threads(2) collapse(2) reduction(+:C_distributed[:n0*m0])
+// 		for (int j0 = 0; j0 < n0; j0 += block_size)
+// 		{
+// 			for (int p0 = 0; p0 < m0; p0 += block_size)
+// 			{
+// 				for (int i0 = 0; i0 <= j0; i0 += block_size)
+// 				{
+// 					for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
+// 					{
+// 						for (int pp = p0; pp < MIN(p0 + block_size, m0); ++pp)
+// 						{
+// 							float B_pj = B_distributed[pp * cs_B + jj * rs_B];
+// 							for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
+// 							{
+// 								float A_ip = A_distributed[ii * cs_A + pp * rs_A];
+// 								C_distributed[ii * cs_C + jj * rs_C] += A_ip * B_pj;
+// 							}
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
 	}
 	else
 	{
@@ -141,11 +173,11 @@ void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_
 	else
 	{
 		/*
-	  STUDENT_TODO: Modify this is you plan to use more
-	  than 1 rank to do work in distributed memory context.
+	      STUDENT_TODO: Modify this is you plan to use more
+	      than 1 rank to do work in distributed memory context.
 
-	  Note: In the original configuration only rank with
-	  rid == 0 has all of its buffers allocated.
+	      Note: In the original configuration only rank with
+	      rid == 0 has all of its buffers allocated.
 		*/
 	}
 }
@@ -203,15 +235,15 @@ void DISTRIBUTE_DATA_NAME(int m0, int n0, float *A_sequential, float *B_sequenti
 	else
 	{
 		/*
-	  STUDENT_TODO: Modify this is you plan to use more
-	  than 1 rank to do work in distributed memory context.
+	      STUDENT_TODO: Modify this is you plan to use more
+	      than 1 rank to do work in distributed memory context.
 
-	  Note: In the original configuration only rank with
-	  rid == 0 has all of the necessary data for the computation.
-	  All other ranks have garbage in their data. This is where
-	  rank with rid == 0 needs to SEND data to the other nodes
-	  to RECEIVE the data, or use COLLECTIVE COMMUNICATION to
-	  distribute the data.
+	      Note: In the original configuration only rank with
+	      rid == 0 has all of the necessary data for the computation.
+	      All other ranks have garbage in their data. This is where
+	      rank with rid == 0 needs to SEND data to the other nodes
+	      to RECEIVE the data, or use COLLECTIVE COMMUNICATION to
+	      distribute the data.
 		*/
 	}
 }
@@ -252,17 +284,17 @@ void COLLECT_DATA_NAME(int m0, int n0, float *C_distributed, float *C_sequential
 	else
 	{
 		/*
-	  STUDENT_TODO: Modify this is you plan to use more
-	  than 1 rank to do work in distributed memory context.
+	      STUDENT_TODO: Modify this is you plan to use more
+	      than 1 rank to do work in distributed memory context.
 
-	  Note: In the original configuration only rank with
-	  rid == 0 performs the computation and copies the
-	  "distributed" data to the "sequential" buffer that
-	  is checked by the verifier on rank rid == 0. If the
-	  other ranks contributed to the computation, then
-	  rank rid == 0 needs to RECEIVE the contributions that
-	  the other ranks SEND, or use COLLECTIVE COMMUNICATIONS
-	  for the same result.
+	      Note: In the original configuration only rank with
+	      rid == 0 performs the computation and copies the
+	      "distributed" data to the "sequential" buffer that
+	      is checked by the verifier on rank rid == 0. If the
+	      other ranks contributed to the computation, then
+	      rank rid == 0 needs to RECEIVE the contributions that
+	      the other ranks SEND, or use COLLECTIVE COMMUNICATIONS
+	      for the same result.
 		*/
 	}
 }
@@ -288,13 +320,13 @@ void DISTRIBUTED_FREE_NAME(int m0, int n0, float *A_distributed, float *B_distri
 	else
 	{
 		/*
-	  STUDENT_TODO: Modify this is you plan to use more
-	  than 1 rank to do work in distributed memory context.
+	      STUDENT_TODO: Modify this is you plan to use more
+	      than 1 rank to do work in distributed memory context.
 
-	  Note: In the original configuration only rank with
-	  rid == 0 allocates the "distributed" buffers for itself.
-	  If the other ranks were modified to allocate their own
-	  buffers then they need to be freed at the end.
+	      Note: In the original configuration only rank with
+	      rid == 0 allocates the "distributed" buffers for itself.
+	      If the other ranks were modified to allocate their own
+	      buffers then they need to be freed at the end.
 		*/
 	}
 }

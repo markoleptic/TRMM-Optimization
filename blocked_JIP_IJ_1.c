@@ -65,6 +65,8 @@
 #define DISTRIBUTED_FREE_NAME baseline_free
 #endif
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, float *C_distributed)
 
 {
@@ -75,7 +77,6 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	int root_rid = 0;
 
 	/*
-
 	  Using the convention that row_stride (rs) is the step size you take going down a row,
 	  column stride (cs) is the step size going down the column.
 	*/
@@ -94,21 +95,28 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 	MPI_Comm_rank(MPI_COMM_WORLD, &rid);
 	MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
+	const int block_size = 8;
+
 	if (rid == root_rid)
 	{
-		for (int i0 = 0; i0 < n0; ++i0)
+		for (int j0 = 0; j0 < n0; j0 += block_size)
 		{
-			for (int j0 = i0 + 1; j0 < n0; ++j0)
+			for (int i0 = 0; i0 <= j0; i0 += block_size)
 			{
-				float res = 0.0f;
-				for (int p0 = 0; p0 < m0; ++p0)
+				for (int jj = j0; jj < MIN(j0 + block_size, n0); ++jj)
 				{
-					float A_ip = A_distributed[i0 * cs_A + p0 * rs_A];
-					float B_pj = B_distributed[p0 * cs_B + j0 * rs_B];
-
-					res += A_ip * B_pj;
+					for (int ii = i0; ii < MIN(i0 + block_size, jj); ++ii)
+					{
+						float res = 0.0f;
+						for (int p0 = 0; p0 < m0; ++p0)
+						{
+							float A_ip = A_distributed[ii * cs_A + p0 * rs_A];
+							float B_pj = B_distributed[p0 * cs_B + jj * rs_B];
+							res += A_ip * B_pj;
+						}
+						C_distributed[ii * cs_C + jj * rs_C] = res;
+					}
 				}
-				C_distributed[i0 * cs_C + j0 * rs_C] = res;
 			}
 		}
 	}
@@ -118,6 +126,58 @@ void COMPUTE_NAME(int m0, int n0, float *A_distributed, float *B_distributed, fl
 		 than 1 rank to do work in distributed memory context. */
 	}
 }
+
+// Access Pattern when block_size = 8:
+/*
+jj: 0 ii:
+jj: 1 ii: 0
+jj: 2 ii: 0 1
+jj: 3 ii: 0 1 2
+jj: 4 ii: 0 1 2 3
+jj: 5 ii: 0 1 2 3 4
+jj: 6 ii: 0 1 2 3 4 5
+jj: 7 ii: 0 1 2 3 4 5 6
+jj: 8 ii: 0 1 2 3 4 5 6 7
+jj: 9 ii: 0 1 2 3 4 5 6 7
+jj: 10 ii: 0 1 2 3 4 5 6 7
+jj: 11 ii: 0 1 2 3 4 5 6 7
+jj: 12 ii: 0 1 2 3 4 5 6 7
+jj: 13 ii: 0 1 2 3 4 5 6 7
+jj: 14 ii: 0 1 2 3 4 5 6 7
+jj: 15 ii: 0 1 2 3 4 5 6 7
+jj: 8 ii:
+jj: 9 ii: 8
+jj: 10 ii: 8 9
+jj: 11 ii: 8 9 10
+jj: 12 ii: 8 9 10 11
+jj: 13 ii: 8 9 10 11 12
+jj: 14 ii: 8 9 10 11 12 13
+jj: 15 ii: 8 9 10 11 12 13 14
+jj: 16 ii: 0 1 2 3 4 5 6 7
+jj: 17 ii: 0 1 2 3 4 5 6 7
+jj: 18 ii: 0 1 2 3 4 5 6 7
+jj: 19 ii: 0 1 2 3 4 5 6 7
+jj: 20 ii: 0 1 2 3 4 5 6 7
+jj: 21 ii: 0 1 2 3 4 5 6 7
+jj: 22 ii: 0 1 2 3 4 5 6 7
+jj: 23 ii: 0 1 2 3 4 5 6 7
+jj: 16 ii: 8 9 10 11 12 13 14 15
+jj: 17 ii: 8 9 10 11 12 13 14 15
+jj: 18 ii: 8 9 10 11 12 13 14 15
+jj: 19 ii: 8 9 10 11 12 13 14 15
+jj: 20 ii: 8 9 10 11 12 13 14 15
+jj: 21 ii: 8 9 10 11 12 13 14 15
+jj: 22 ii: 8 9 10 11 12 13 14 15
+jj: 23 ii: 8 9 10 11 12 13 14 15
+jj: 16 ii:
+jj: 17 ii: 16
+jj: 18 ii: 16 17
+jj: 19 ii: 16 17 18
+jj: 20 ii: 16 17 18 19
+jj: 21 ii: 16 17 18 19 20
+jj: 22 ii: 16 17 18 19 20 21
+jj: 23 ii: 16 17 18 19 20 21 22
+*/
 
 // Create the buffers on each node
 void DISTRIBUTED_ALLOCATE_NAME(int m0, int n0, float **A_distributed, float **B_distributed, float **C_distributed)

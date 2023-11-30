@@ -10,8 +10,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sys, getopt
+import re
 
-
+def extract_var_label(filename):
+    match = re.search(r'var\d+', filename)
+    return match.group() if match else filename
 
 def main():
 
@@ -36,15 +39,18 @@ def main():
         df = pd.read_csv(fn)
         xsize = df['m0']    
         res   = df['result']
-        ax.plot(xsize, res,label=fn)
+        label = extract_var_label(fn)
+        ax.plot(xsize, res,label=label)
         ymax=max(ymax,max(res))
 
     ax.set(ylim=(0, ymax*1.5),
            xlabel=x_label, ylabel=y_label,
            title=chart_title)
     
-
-    plt.legend()
+    legend = plt.legend(labelspacing=0.25)
+    for text in legend.get_texts():
+        text.set_fontsize(8) 
+    
     fig.savefig(fig_fn)
     #plt.show() # comment out for headless run
 
