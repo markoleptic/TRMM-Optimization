@@ -1,9 +1,16 @@
-In this file perform a postmortem. What was the work that was
-done? How was it divided? How would you distribute the points amongst your teammates
-(50/50, 60/40, 33/33/33?). How did your original statement of work line up with what was
+In this lab we divided work by what variants each member wanted to attempt. We then worked on the writeup together and plotting each other variants when needed. 
+
+(33/33/33)
+
+How did your original statement of work line up with what was
 done? How did it evolve? How much time (and/or effort) did this take? How was the time
-(and/or effort) distributed across the task and team members? What would you do differently
-next time? This can be answered as a team or individually. With the point distribution, there
-is a small consensus bonus if the team agrees on the point distribution. If the team does agreee
-on a distribution then the average of the distributions will be used. Lastly, include the total
-number of person-hours spent on this lab.
+(and/or effort) distributed across the task and team members? 
+
+Our original statement of work lined up mostly with what we originally intended. 
+
+If we were able to do the do it differently we would have our schedule of work more planned out in the beginning as some parts took longer than expected. 
+
+Person-hours:
+Rachelle 12 hours
+Mark:
+Jacob: 
